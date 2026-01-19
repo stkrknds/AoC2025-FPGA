@@ -93,7 +93,10 @@ module Make (C : Config) = struct
             split_input.(bit_idx + 1))
       in
       let reg_out =
-        mux2 (col_cnt ==:. 0 |: (col_cnt >=:. C.num_cols + 1)) gnd delay_buffer
+        mux2
+          (col_cnt ==:. 0 |: (col_cnt >=:. C.num_cols + 1) |: inserting_pad_row)
+          gnd
+          delay_buffer
       in
       let output = out_list @ [ reg_out ] in
       output)
@@ -164,7 +167,9 @@ module Make (C : Config) = struct
     let spec = Reg_spec.create ~clock:i.clock ~clear:i.clear () in
     let sm = State_machine.create (module States) spec in
     (* the first and last rows are all zeros *)
-    let inserting_pad_row = sm.is LastRow |: sm.is FirstRow in
+    let inserting_pad_row =
+      sm.is LastRow |: sm.is FirstRow |: sm.is BLastRow |: sm.is BFirstRow
+    in
     (* Number of rolls that have been removed *)
     let%hw_var remove_cnt = Variable.reg spec ~width:16 in
     let ready_o = Variable.reg spec ~width:1 in
